@@ -17,10 +17,6 @@ class RedisSession extends Object implements CakeSessionHandlerInterface {
 
 	protected $_password = false;
 
-	protected $_userMapPrefix = 'USERS';
-
-	protected $_userMapField = 'id';
-
 	public function __construct() {
 		$this->_store = new Redis();
 	}
@@ -39,15 +35,6 @@ class RedisSession extends Object implements CakeSessionHandlerInterface {
 		}
 		if (!empty($config['handler']['prefix'])) {
 			$this->_prefix = $config['handler']['prefix'];
-		}
-		if (!empty($config['handler']['userMap'])) {
-			$this->_userMap = $config['handler']['userMap'];
-		}
-		if (!empty($config['handler']['userMapPrefix'])) {
-			$this->_userMapPrefix= $config['handler']['userMapPrefix'];
-		}
-		if (!empty($config['handler']['userMapField'])) {
-			$this->_userMapField= $config['handler']['userMapField'];
 		}
 	}
 
@@ -71,52 +58,15 @@ class RedisSession extends Object implements CakeSessionHandlerInterface {
 
 	public function write($id, $data) {
 		$id = sprintf('%s:%s', $this->_prefix, $id);
-		$stored = $this->_store->setex($id, $this->_timeout, $data);
-		if ($this->_userMap) {
-			$this->_storeUserMap($id, $data);
-		}
-		return $stored;
-	}
-
-	protected function _storeUserMap($id, $data) {
-		$decoded = wddx_deserialize($data);
-		if (!is_array($decoded)) {
-			return false;
-		}
-		$uid = Hash::get($decoded, AuthComponent::$sessionKey . '.id');
-		if (empty($uid)) {
-			return;
-		}
-		$usermap = $this->_userMapPrefix . ':' . $uid;
-		return $this->_store->setex($usermap, $this->_timeout, $id);
-	}
-
-	protected function _removeUserMap($id) {
-		$data = $this->_store->get($id);
-		if (!$data) {
-			return;
-		}
-		$decoded = wddx_deserialize($data);
-		if (!is_array($decoded)) {
-			return false;
-		}
-		$uid = Hash::get($decoded, AuthComponent::$sessionKey . '.id');
-		if (empty($uid)) {
-			return;
-		}
-		$usermap = $this->_userMapPrefix . ':' . $uid;
-		return $this->_store->del($usermap);
+		return $this->_store->setex($id, $this->_timeout, $data);
 	}
 
 	public function destroy($id) {
 		$id = sprintf('%s:%s', $this->_prefix, $id);
-		if ($this->_userMap) {
-			$this->_removeUserMap($id);
-		}
 		return $this->_store->delete($id);
 	}
 
 	public function gc($expires = null) {
+		return true;
 	}
-
 }
