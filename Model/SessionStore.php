@@ -46,5 +46,4 @@ class SessionStore extends AppModel {
 	public function total() {
 		return count($this->_store->keys('PHP*'));
 	}
-
 }
